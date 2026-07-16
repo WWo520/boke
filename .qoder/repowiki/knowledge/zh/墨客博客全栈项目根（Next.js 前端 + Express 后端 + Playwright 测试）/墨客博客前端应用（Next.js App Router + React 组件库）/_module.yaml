@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: frontend_app
+title: 墨客博客前端应用（Next.js App Router + React 组件库）
+scope:
+    - src/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend_server/app_entry_and_db
+    - path: backend_server/auth_user
+    - path: backend_server/posts_content

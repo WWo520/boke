@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: backend_server/posts_content
+title: 文章、问答与回答内容路由
+scope:
+    - server/src/routes/posts.js
+    - server/src/routes/questions.js
+    - server/src/routes/answers.js
+source_files: []
+depends_on: []
+related_to:
+    - path: frontend_app

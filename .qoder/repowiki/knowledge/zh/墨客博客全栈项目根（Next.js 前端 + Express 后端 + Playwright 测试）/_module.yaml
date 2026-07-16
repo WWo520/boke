@@ -1,0 +1,22 @@
+schema_version: 1
+module_path: ""
+title: 墨客博客全栈项目根（Next.js 前端 + Express 后端 + Playwright 测试）
+scope:
+    - README.md
+    - API.md
+    - test-results/
+    - ms-playwright/
+    - PROJECT_OVERVIEW.md
+    - debug.log
+    - jsconfig.json
+    - next-env.d.ts
+    - next.config.mjs
+    - package-lock.json
+    - package.json
+    - page.html
+    - postcss.config.mjs
+    - response.txt
+    - tsconfig.json
+source_files: []
+depends_on: []
+related_to: []

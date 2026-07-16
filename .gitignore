@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Next.js
+.next/
+out/
+
+# Build
+dist/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+test-results/
+ms-playwright/
+e2e/test-results/
+
+# Uploads (user generated content)
+server/uploads/
+
+# Screenshots
+*.png
+!public/**/*.png
+
+# Logs
+debug.log
+npm-debug.log*
+
+# Misc
+response.txt
+page.html
+.next/cache/
+
+# Trae
+.trae/

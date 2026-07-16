@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: backend_server/app_entry_and_db
+title: Express 应用入口与数据库初始化层
+scope:
+    - server/src/index.js
+    - server/src/db.js
+    - server/src/db-sqlite.js
+source_files: []
+depends_on: []
+related_to:
+    - path: frontend_app

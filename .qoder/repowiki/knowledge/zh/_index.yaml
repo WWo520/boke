@@ -1,0 +1,102 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: Q0DeR-MaG1C-BrAnCh-Fo2-NoN-GiT-Or-No-C0MmIt
+nodes_managed: true
+exported_at: "2026-07-16T08:01:52Z"
+modules:
+    "":
+        dir_name: 墨客博客全栈项目根（Next.js 前端 + Express 后端 + Playwright 测试）
+        title: 墨客博客全栈项目根（Next.js 前端 + Express 后端 + Playwright 测试）
+        scope:
+            - README.md
+            - API.md
+            - test-results/
+            - ms-playwright/
+            - PROJECT_OVERVIEW.md
+            - debug.log
+            - jsconfig.json
+            - next-env.d.ts
+            - next.config.mjs
+            - package-lock.json
+            - package.json
+            - page.html
+            - postcss.config.mjs
+            - response.txt
+            - tsconfig.json
+        source_files: []
+        children:
+            - backend_server
+            - docs
+            - frontend_app
+        depends_on: []
+        related_to: []
+    backend_server:
+        dir_name: 技术社区后端服务（Express + 双数据库）
+        title: 技术社区后端服务（Express + 双数据库）
+        scope:
+            - server/
+        source_files: []
+        children:
+            - backend_server/app_entry_and_db
+            - backend_server/auth_user
+            - backend_server/posts_content
+        depends_on: []
+        related_to: []
+    backend_server/app_entry_and_db:
+        dir_name: Express 应用入口与数据库初始化层
+        title: Express 应用入口与数据库初始化层
+        scope:
+            - server/src/index.js
+            - server/src/db.js
+            - server/src/db-sqlite.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend_app
+    backend_server/auth_user:
+        dir_name: 用户认证与个人中心路由
+        title: 用户认证与个人中心路由
+        scope:
+            - server/src/routes/auth.js
+            - server/src/routes/users.js
+            - server/src/middleware/auth.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend_app
+    backend_server/posts_content:
+        dir_name: 文章、问答与回答内容路由
+        title: 文章、问答与回答内容路由
+        scope:
+            - server/src/routes/posts.js
+            - server/src/routes/questions.js
+            - server/src/routes/answers.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend_app
+    docs:
+        dir_name: 墨客博客项目设计文档集
+        title: 墨客博客项目设计文档集
+        scope:
+            - docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend_app:
+        dir_name: 墨客博客前端应用（Next.js App Router + React 组件库）
+        title: 墨客博客前端应用（Next.js App Router + React 组件库）
+        scope:
+            - src/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend_server/app_entry_and_db
+            - path: backend_server/auth_user
+            - path: backend_server/posts_content
