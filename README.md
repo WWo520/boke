@@ -155,5 +155,5 @@ npm run preview
 
 ## License
 如需定制自己的博客和别的项目请联系
-![alt text](public\image.png)
+![alt text](public/image.png)
 MIT
