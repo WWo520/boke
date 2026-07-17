@@ -154,5 +154,6 @@ npm run preview
 - 现代移动端浏览器
 
 ## License
-
+如需定制自己的博客和别的项目请联系
+![alt text](image.png)
 MIT
