@@ -110,7 +110,7 @@ router.get('/id/:id', authMiddleware, async (req, res) => {
     const row = await queryOne(`
       SELECT p.*, c.id as "categoryId", c.name as "categoryName", c.slug as "categorySlug", c.color as "categoryColor",
              u.name as "authorName", u.avatar as "authorAvatar", u.bio as "authorBio"
-      FROM posts p JOIN categories c ON c.id = p."categoryId" LEFT JOIN users u ON u.id = p."authorId" WHERE p.id = $1
+      FROM posts p LEFT JOIN categories c ON c.id = p."categoryId" LEFT JOIN users u ON u.id = p."authorId" WHERE p.id = $1
     `, [req.params.id]);
 
     if (!row) {
@@ -191,18 +191,21 @@ router.get('/:slug/comments', async (req, res) => {
   const totalPages = Math.ceil(total / pageSize);
 
   const comments = await queryAll(
-    'SELECT id, "parentId", "authorId", author, avatar, content, likes, "createdAt" FROM comments WHERE "postId" = $1 ORDER BY "createdAt" DESC LIMIT $2 OFFSET $3',
+    `SELECT c.id, c."parentId", c."authorId", c.author, c.avatar, c.content, c.likes, c."createdAt",
+            COALESCE(rc.count, 0) as "replyCount"
+     FROM comments c
+     LEFT JOIN LATERAL (
+       SELECT COUNT(*) as count FROM comments r WHERE r."parentId" = c.id
+     ) rc ON true
+     WHERE c."postId" = $1
+     ORDER BY c."createdAt" DESC LIMIT $2 OFFSET $3`,
     [post.id, pageSize, offset]
   );
 
-  const data = [];
-  for (const comment of comments) {
-    const replyCount = await queryOne('SELECT COUNT(*) as count FROM comments WHERE "parentId" = $1', [comment.id]);
-    data.push({
-      ...comment,
-      replyCount: parseInt(replyCount.count) || 0,
-    });
-  }
+  const data = comments.map((comment) => ({
+    ...comment,
+    replyCount: parseInt(comment.replyCount) || 0,
+  }));
 
   res.json({ data, pagination: { page, pageSize, total, totalPages } });
 });
@@ -240,7 +243,7 @@ router.post('/:slug/like', authMiddleware, async (req, res) => {
     const existing = await queryOne('SELECT id FROM post_likes WHERE "postId" = $1 AND "userId" = $2', [post.id, req.user.id]);
     if (existing) {
       await runSql('DELETE FROM post_likes WHERE id = $1', [existing.id]);
-      await runSql('UPDATE posts SET "likeCount" = "likeCount" - 1 WHERE id = $1', [post.id]);
+      await runSql('UPDATE posts SET "likeCount" = GREATEST(0, "likeCount" - 1) WHERE id = $1', [post.id]);
       const countRow = await queryOne('SELECT "likeCount" FROM posts WHERE id = $1', [post.id]);
       res.json({ data: { liked: false, count: countRow.likeCount || 0 } });
     } else {
@@ -281,7 +284,7 @@ router.post('/:slug/favorite', authMiddleware, async (req, res) => {
     const existing = await queryOne('SELECT id FROM post_favorites WHERE "postId" = $1 AND "userId" = $2', [post.id, req.user.id]);
     if (existing) {
       await runSql('DELETE FROM post_favorites WHERE id = $1', [existing.id]);
-      await runSql('UPDATE posts SET "favoriteCount" = "favoriteCount" - 1 WHERE id = $1', [post.id]);
+      await runSql('UPDATE posts SET "favoriteCount" = GREATEST(0, "favoriteCount" - 1) WHERE id = $1', [post.id]);
       const countRow = await queryOne('SELECT "favoriteCount" FROM posts WHERE id = $1', [post.id]);
       res.json({ data: { favorited: false, count: countRow.favoriteCount || 0 } });
     } else {
@@ -460,7 +463,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     }
 
     await runSql('DELETE FROM posts WHERE id = $1', [req.params.id]);
-    await runSql('UPDATE categories SET "postCount" = "postCount" - 1 WHERE id = $1', [post.categoryId]);
+    await runSql('UPDATE categories SET "postCount" = GREATEST(0, "postCount" - 1) WHERE id = $1', [post.categoryId]);
     res.json({ data: { id: parseInt(req.params.id), message: '删除成功' } });
   } catch (err) {
     console.error('Delete post error:', err);

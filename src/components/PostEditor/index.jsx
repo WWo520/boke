@@ -1,18 +1,21 @@
+'use client';
+
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useRouter, useParams } from 'next/navigation';
 import {
   Eye, EyeOff, Send, ArrowLeft, Upload, X, FileImage,
   Tag, AlertCircle, CheckCircle, Loader2, Sparkles, Save, Clock,
-  Bold, Italic, List, ListOrdered, Quote, Code, Link2, Heading1, Heading2,
 } from 'lucide-react';
-import { postsApi, categoriesApi } from '../api/client';
-import { uploadImage } from '../api/client';
-import { useToast } from '../components/Toast/Toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github.css';
-import styles from './PostEditor.module.css';
+import dynamic from 'next/dynamic';
+import { postsApi, categoriesApi, uploadImage } from '@/api/client';
+import { useToast } from '@/components/Toast/Toast';
+import styles from '@/css_pages/posteditor.module.css';
+
+const VditorEditor = dynamic(() => import('@/components/VditorEditor'), { ssr: false });
 
 const VALID_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/svg+xml'];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -62,12 +65,12 @@ function compressImage(file) {
 }
 
 function getToken() {
-  try { return localStorage.getItem('blog_token'); } catch { return null; }
+  try { return sessionStorage.getItem('blog_token'); } catch { return null; }
 }
 
 function getCurrentUsername() {
   try {
-    const stored = localStorage.getItem('blog_user');
+    const stored = sessionStorage.getItem('blog_user');
     if (stored) {
       const user = JSON.parse(stored);
       return user.name;
@@ -79,8 +82,9 @@ function getCurrentUsername() {
 }
 
 export default function PostEditor() {
-  const navigate = useNavigate();
-  const { id: paramId } = useParams();
+  const router = useRouter();
+  const params = useParams();
+  const paramId = params.id;
   const addToast = useToast();
   const fileInputRef = useRef(null);
   const [categories, setCategories] = useState([]);
@@ -106,18 +110,18 @@ export default function PostEditor() {
   useEffect(() => {
     if (!getToken()) {
       addToast('请先登录后再创作文章', 'error');
-      navigate('/', { replace: true });
+      router.push('/', { replace: true });
     }
-  }, [navigate, addToast]);
+  }, [router, addToast]);
 
   // Auto-save draft
   useEffect(() => {
     if (!formData.title && !formData.content) return;
-    
+
     if (autoSaveTimer.current) {
       clearTimeout(autoSaveTimer.current);
     }
-    
+
     autoSaveTimer.current = setTimeout(() => {
       autoSaveDraft();
     }, 30000);
@@ -132,7 +136,7 @@ export default function PostEditor() {
   const autoSaveDraft = async () => {
     if (!formData.title.trim()) return;
     if (formData.status === 'published') return;
-    
+
     setAutoSaveStatus('saving');
     try {
       const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t);
@@ -151,7 +155,7 @@ export default function PostEditor() {
       } else {
         const res = await postsApi.create(postData);
         if (res.data && res.data.id) {
-          window.history.replaceState({}, '', `/write/${res.data.id}`);
+          window.history.replaceState({}, '', `/u/${getCurrentUsername()}/write/${res.data.id}`);
           setPostId(res.data.id.toString());
         }
       }
@@ -327,7 +331,7 @@ export default function PostEditor() {
       } else {
         addToast(postId ? '文章更新成功！' : '文章发布成功！');
       }
-      navigate(`/u/${getCurrentUsername()}/profile`);
+      router.push(`/u/${getCurrentUsername()}/profile`);
     } catch (err) {
       addToast(err.message || (formData.status === 'draft' ? '保存草稿失败' : '操作失败'), 'error');
     } finally {
@@ -337,27 +341,6 @@ export default function PostEditor() {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const insertMarkdown = (prefix, suffix = '') => {
-    const textarea = document.querySelector(`.${styles.contentEditor}`);
-    if (!textarea) return;
-    
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end);
-    const before = textarea.value.substring(0, start);
-    const after = textarea.value.substring(end);
-    
-    const newText = before + prefix + selectedText + suffix + after;
-    setFormData(prev => ({ ...prev, content: newText }));
-    
-    setTimeout(() => {
-      textarea.focus();
-      const newStart = start + prefix.length;
-      const newEnd = selectedText ? newStart + selectedText.length : newStart;
-      textarea.setSelectionRange(newStart, newEnd);
-    }, 0);
   };
 
   // Preview rendering
@@ -412,7 +395,7 @@ export default function PostEditor() {
       {/* Hero Gradient Bar */}
       <div className={styles.heroBar}>
         <div className={styles.heroContent}>
-          <button className={styles.backButton} onClick={() => navigate(-1)}>
+          <button className={styles.backButton} onClick={() => router.back()}>
             <ArrowLeft size={18} />
             <span>返回</span>
           </button>
@@ -605,62 +588,30 @@ export default function PostEditor() {
             )}
           </div>
 
-          {/* Panel: Content */}
+          {/* Panel: Content (WYSIWYG - vditor) */}
           <div className={styles.panel}>
             <div className={styles.panelHeader}>
               <h2 className={styles.panelTitle}>
                 文章内容 <span className={styles.required}>*</span>
               </h2>
+              <span style={{ fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                所见即所得 · 内容以 Markdown 存储
+              </span>
             </div>
+
             {!previewMode && (
-              <>
-                <div className={styles.toolbar}>
-                  <button type="button" className={styles.toolbarBtn} onClick={() => insertMarkdown('# ')} title="标题">
-                    <Heading1 size={16} />
-                  </button>
-                  <button type="button" className={styles.toolbarBtn} onClick={() => insertMarkdown('## ')} title="二级标题">
-                    <Heading2 size={16} />
-                  </button>
-                  <button type="button" className={styles.toolbarBtn} onClick={() => insertMarkdown('**', '**')} title="粗体">
-                    <Bold size={16} />
-                  </button>
-                  <button type="button" className={styles.toolbarBtn} onClick={() => insertMarkdown('*', '*')} title="斜体">
-                    <Italic size={16} />
-                  </button>
-                  <button type="button" className={styles.toolbarBtn} onClick={() => insertMarkdown('- ')} title="无序列表">
-                    <List size={16} />
-                  </button>
-                  <button type="button" className={styles.toolbarBtn} onClick={() => insertMarkdown('1. ')} title="有序列表">
-                    <ListOrdered size={16} />
-                  </button>
-                  <button type="button" className={styles.toolbarBtn} onClick={() => insertMarkdown('> ')} title="引用">
-                    <Quote size={16} />
-                  </button>
-                  <button type="button" className={styles.toolbarBtn} onClick={() => insertMarkdown('```\n', '\n```')} title="代码块">
-                    <Code size={16} />
-                  </button>
-                  <button type="button" className={styles.toolbarBtn} onClick={() => insertMarkdown('[', '](url)')} title="链接">
-                    <Link2 size={16} />
-                  </button>
-                </div>
-                <textarea
-                  className={styles.contentEditor}
+              <div className={styles.vditorWrap}>
+                <VditorEditor
                   value={formData.content}
-                  onChange={(e) => handleChange('content', e.target.value)}
-                  placeholder="开始写你的文章内容...支持 Markdown 格式，如 **粗体**、*斜体*、# 标题、- 列表等"
-                  rows={18}
+                  onChange={(v) => handleChange('content', v)}
                 />
-                <div className={styles.contentFooter}>
-                  <FileImage size={14} />
-                  <span>支持 Markdown 语法：标题、粗体、斜体、列表、引用、代码块、表格等</span>
-                </div>
-              </>
+              </div>
             )}
           </div>
 
           {/* Actions */}
           <div className={styles.actionsBar}>
-            <button type="button" className={styles.cancelBtn} onClick={() => navigate(-1)}>
+            <button type="button" className={styles.cancelBtn} onClick={() => router.back()}>
               取消
             </button>
             <div className={styles.autoSaveIndicator}>

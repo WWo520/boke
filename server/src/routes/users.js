@@ -258,19 +258,13 @@ router.get('/:username/followers', authMiddleware, async (req, res) => {
     const totalPages = Math.ceil(total / pageSize);
 
     const rows = await queryAll(`
-      SELECT u.id, u.name, u.avatar, u.bio, u.level, u.points, u."followersCount", u."followingCount", uf."createdAt"
+      SELECT u.id, u.name, u.avatar, u.bio, u.level, u.points, u."followersCount", u."followingCount", uf."createdAt",
+             EXISTS(SELECT 1 FROM user_follows me WHERE me."userId" = $2 AND me."followId" = u.id) as "isFollowing"
       FROM user_follows uf JOIN users u ON uf."userId" = u.id
-      WHERE uf."followId" = $1 ORDER BY uf."createdAt" DESC LIMIT $2 OFFSET $3
-    `, [user.id, pageSize, offset]);
+      WHERE uf."followId" = $1 ORDER BY uf."createdAt" DESC LIMIT $3 OFFSET $4
+    `, [user.id, req.user.id, pageSize, offset]);
 
-    const data = [];
-    for (const row of rows) {
-      const isFollowing = await queryOne('SELECT id FROM user_follows WHERE "userId" = $1 AND "followId" = $2', [req.user.id, row.id]);
-      data.push({
-        ...row,
-        isFollowing: !!isFollowing,
-      });
-    }
+    const data = rows.map((row) => ({ ...row, isFollowing: !!row.isFollowing }));
 
     res.json({ data, pagination: { page, pageSize, total, totalPages } });
   } catch (err) {
@@ -296,19 +290,13 @@ router.get('/:username/following', authMiddleware, async (req, res) => {
     const totalPages = Math.ceil(total / pageSize);
 
     const rows = await queryAll(`
-      SELECT u.id, u.name, u.avatar, u.bio, u.level, u.points, u."followersCount", u."followingCount", uf."createdAt"
+      SELECT u.id, u.name, u.avatar, u.bio, u.level, u.points, u."followersCount", u."followingCount", uf."createdAt",
+             EXISTS(SELECT 1 FROM user_follows me WHERE me."userId" = $2 AND me."followId" = u.id) as "isFollowing"
       FROM user_follows uf JOIN users u ON uf."followId" = u.id
-      WHERE uf."userId" = $1 ORDER BY uf."createdAt" DESC LIMIT $2 OFFSET $3
-    `, [user.id, pageSize, offset]);
+      WHERE uf."userId" = $1 ORDER BY uf."createdAt" DESC LIMIT $3 OFFSET $4
+    `, [user.id, req.user.id, pageSize, offset]);
 
-    const data = [];
-    for (const row of rows) {
-      const isFollowing = await queryOne('SELECT id FROM user_follows WHERE "userId" = $1 AND "followId" = $2', [req.user.id, row.id]);
-      data.push({
-        ...row,
-        isFollowing: !!isFollowing,
-      });
-    }
+    const data = rows.map((row) => ({ ...row, isFollowing: !!row.isFollowing }));
 
     res.json({ data, pagination: { page, pageSize, total, totalPages } });
   } catch (err) {

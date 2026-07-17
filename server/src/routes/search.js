@@ -159,19 +159,16 @@ router.get('/users', async (req, res) => {
     `, [`%${q.trim()}%`]);
 
     const rows = await queryAll(`
-      SELECT id, name, avatar, bio, level, points, "followersCount", "followingCount", title, company, location, "createdAt"
-      FROM users WHERE name ILIKE $1 OR bio ILIKE $1
-      ORDER BY "followersCount" DESC LIMIT $2 OFFSET $3
+      SELECT id, name, avatar, bio, level, points, "followersCount", "followingCount", title, company, location, "createdAt",
+             (SELECT COUNT(*) FROM posts p WHERE p."authorId" = u.id AND p.status = 'published') as "postCount"
+      FROM users u WHERE u.name ILIKE $1 OR u.bio ILIKE $1
+      ORDER BY u."followersCount" DESC LIMIT $2 OFFSET $3
     `, [`%${q.trim()}%`, pageSize, offset]);
 
-    const data = [];
-    for (const row of rows) {
-      const postCount = await queryOne('SELECT COUNT(*) as count FROM posts WHERE "authorId" = $1 AND status = $2', [row.id, 'published']);
-      data.push({
-        ...row,
-        postCount: postCount.count || 0,
-      });
-    }
+    const data = rows.map((row) => ({
+      ...row,
+      postCount: parseInt(row.postCount) || 0,
+    }));
 
     res.json({ 
       data, 

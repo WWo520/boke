@@ -1,10 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { initDb, queryOne, queryAll, runSql, insertSql } from './db.js';
+import { randomUUID } from 'crypto';
+import { initDb, queryOne, queryAll, runSql, insertSql, healthCheck } from './db.js';
 import seed from './seed.js';
 import { authMiddleware, adminMiddleware } from './middleware/auth.js';
 
@@ -50,9 +52,53 @@ const upload = multer({
   },
 });
 
-app.use(cors());
+app.set('trust proxy', 1);
+
+// 请求 ID：便于日志追踪与问题定位
+app.use((req, res, next) => {
+  req.id = req.headers['x-request-id'] || randomUUID();
+  res.setHeader('X-Request-Id', req.id);
+  next();
+});
+
+// 健康检查端点（无需鉴权）：liveness 与 readiness
+app.get('/healthz', (req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
+app.get('/readyz', async (req, res) => {
+  try {
+    await healthCheck();
+    res.json({ status: 'ready' });
+  } catch {
+    res.status(503).json({ status: 'unavailable' });
+  }
+});
+
+// CORS 白名单：默认放行本地前端；生产可用 CORS_ORIGINS（逗号分隔）覆盖
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+app.use(cors({
+  origin: (origin, cb) => {
+    // 允许同源/无 origin（如服务器间调用、curl）以及白名单来源
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    return cb(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '5mb' }));
 app.use('/uploads', express.static(UPLOADS_DIR));
+
+// 认证接口限流：抵御暴力破解与刷注册
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  // 生产严格限流；开发/测试环境放宽以免误伤自动化测试
+  max: process.env.NODE_ENV === 'production' ? 30 : 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMITED', message: '操作过于频繁，请稍后再试' } },
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
@@ -173,8 +219,8 @@ app.post('/api/follow/:userId', authMiddleware, async (req, res) => {
     const existing = await queryOne('SELECT id FROM user_follows WHERE "userId" = $1 AND "followId" = $2', [req.user.id, followId]);
     if (existing) {
       await runSql('DELETE FROM user_follows WHERE id = $1', [existing.id]);
-      await runSql('UPDATE users SET "followersCount" = "followersCount" - 1 WHERE id = $1', [followId]);
-      await runSql('UPDATE users SET "followingCount" = "followingCount" - 1 WHERE id = $1', [req.user.id]);
+      await runSql('UPDATE users SET "followersCount" = GREATEST(0, "followersCount" - 1) WHERE id = $1', [followId]);
+      await runSql('UPDATE users SET "followingCount" = GREATEST(0, "followingCount" - 1) WHERE id = $1', [req.user.id]);
       res.json({ data: { following: false } });
     } else {
       await runSql('INSERT INTO user_follows ("userId", "followId") VALUES ($1, $2)', [req.user.id, followId]);
@@ -416,6 +462,27 @@ app.put('/api/admin/users/:id', authMiddleware, adminMiddleware, async (req, res
   }
 });
 
+// 校验图片魔数（文件内容头），防止伪装扩展名的非图片文件
+function isValidImageMagic(filePath, ext) {
+  try {
+    const fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.alloc(12);
+    fs.readSync(fd, buf, 0, 12, 0);
+    fs.closeSync(fd);
+    const hex = buf.toString('hex').toLowerCase();
+    const ascii = buf.toString('latin1');
+    if (ext === '.jpg' || ext === '.jpeg') return hex.startsWith('ffd8ff');
+    if (ext === '.png') return hex.startsWith('89504e47');
+    if (ext === '.gif') return hex.startsWith('47494638');
+    if (ext === '.bmp') return hex.startsWith('424d');
+    if (ext === '.webp') return ascii.startsWith('RIFF') && ascii.slice(8, 12) === 'WEBP';
+    if (ext === '.svg') return ascii.includes('<svg') || ascii.trimStart().startsWith('<?xml');
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 app.post('/api/upload', authMiddleware, (req, res) => {
   upload.single('image')(req, res, (err) => {
     if (err) {
@@ -432,17 +499,27 @@ app.post('/api/upload', authMiddleware, (req, res) => {
       return res.status(400).json({ error: { code: 'NO_FILE', message: '请选择要上传的文件' } });
     }
 
+    // 内容校验：核对文件魔数，拒绝伪装扩展名的非图片文件
+    const ext = path.extname(req.file.filename).toLowerCase();
+    if (!isValidImageMagic(req.file.path, ext)) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(400).json({ error: { code: 'INVALID_IMAGE', message: '文件内容不是有效的图片' } });
+    }
+
     const url = `/uploads/${req.file.filename}`;
     res.json({ data: { url, filename: req.file.filename, size: req.file.size } });
   });
 });
 
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
+  console.error(`[req:${req.id}] Unhandled error:`, err);
   if (err instanceof multer.MulterError) {
-    return res.status(400).json({ error: { code: 'UPLOAD_ERROR', message: err.message } });
+    return res.status(400).json({ error: { code: 'UPLOAD_ERROR', message: err.message, requestId: req.id } });
   }
-  res.status(500).json({ error: { code: 'SERVER_ERROR', message: '服务器内部错误' } });
+  if (err && err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ error: { code: 'CORS_FORBIDDEN', message: '跨域请求被拒绝', requestId: req.id } });
+  }
+  res.status(500).json({ error: { code: 'SERVER_ERROR', message: '服务器内部错误', requestId: req.id } });
 });
 
 const DIST_DIR = path.join(__dirname, '..', '..', 'dist');
@@ -482,7 +559,7 @@ async function start() {
 
   app.listen(PORT, HOST, () => {
     console.log(`🚀 Technical Community API running at http://${HOST}:${PORT}`);
-    console.log(`   Auth:    POST /api/auth/login (test: admin@moke.com / password123)`);
+    console.log(`   Auth:    POST /api/auth/login`);
     console.log(`   Posts:   GET  /api/posts`);
     console.log(`   Search:  GET  /api/search?q=keyword`);
     console.log(`   Rank:    GET  /api/ranking/posts`);

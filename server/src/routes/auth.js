@@ -3,9 +3,9 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { queryOne, insertSql, runSql } from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { JWT_SECRET } from '../config.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'moke-blog-secret-key-2024';
 
 router.post('/register', async (req, res) => {
   try {

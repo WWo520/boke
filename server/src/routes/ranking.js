@@ -1,5 +1,6 @@
 import express from 'express';
 import { queryOne, queryAll } from '../db.js';
+import { optionalAuthMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -54,9 +55,10 @@ router.get('/posts', async (req, res) => {
   }
 });
 
-router.get('/authors', async (req, res) => {
+router.get('/authors', optionalAuthMiddleware, async (req, res) => {
   try {
     const limit = Math.min(50, parseInt(req.query.limit) || 20);
+    const currentUserId = req.user?.id ?? null;
 
     const rows = await queryAll(`
       SELECT u.id, u.name, u.avatar, u.bio, u.level, u.points, u.title, u.company,
@@ -64,10 +66,16 @@ router.get('/authors', async (req, res) => {
              (SELECT COALESCE(SUM(views), 0) FROM posts WHERE "authorId" = u.id AND status = 'published') as totalViews,
              (SELECT COALESCE(SUM("likeCount"), 0) FROM posts WHERE "authorId" = u.id AND status = 'published') as totalLikes,
              (SELECT COUNT(*) FROM user_follows WHERE "followId" = u.id) as followersCount,
-             (SELECT COUNT(*) FROM user_follows WHERE "userId" = u.id) as followingCount
+             (SELECT COUNT(*) FROM user_follows WHERE "userId" = u.id) as followingCount,
+             CASE WHEN $2::int IS NULL THEN false
+                  ELSE EXISTS(SELECT 1 FROM user_follows f WHERE f."userId" = $2 AND f."followId" = u.id)
+             END as "isFollowed",
+             CASE WHEN $2::int IS NULL THEN false
+                  ELSE (u.id = $2)
+             END as "isSelf"
       FROM users u
       ORDER BY followersCount DESC, totalViews DESC LIMIT $1
-    `, [limit]);
+    `, [limit, currentUserId]);
 
     res.json({ data: rows });
   } catch (err) {

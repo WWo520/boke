@@ -28,7 +28,7 @@ export default function FollowButton({ userId, isFollowed: initialFollowed, onFo
       addToast(res.data.following ? '关注成功' : '已取消关注');
     } catch (err) {
       console.error('Follow error:', err);
-      addToast('操作失败');
+      addToast(err.message || '操作失败');
     } finally {
       setLoading(false);
     }

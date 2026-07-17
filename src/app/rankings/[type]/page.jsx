@@ -131,20 +131,24 @@ export default function Rankings() {
                 </div>
               </div>
               <div onClick={(e) => e.stopPropagation()}>
-                <FollowButton
-                  userId={author.id}
-                  isFollowed={false}
-                  onFollowChange={(following) => {
-                    const newData = [...data];
-                    newData[index] = {
-                      ...newData[index],
-                      followersCount: following
-                        ? (newData[index].followersCount || 0) + 1
-                        : Math.max(0, (newData[index].followersCount || 0) - 1)
-                    };
-                    setData(newData);
-                  }}
-                />
+                {author.isSelf ? (
+                  <span className={styles.selfBadge}>这是你</span>
+                ) : (
+                  <FollowButton
+                    userId={author.id}
+                    isFollowed={author.isFollowed}
+                    onFollowChange={(following) => {
+                      const newData = [...data];
+                      newData[index] = {
+                        ...newData[index],
+                        followersCount: following
+                          ? (newData[index].followersCount || 0) + 1
+                          : Math.max(0, (newData[index].followersCount || 0) - 1)
+                      };
+                      setData(newData);
+                    }}
+                  />
+                )}
               </div>
             </div>
           ))

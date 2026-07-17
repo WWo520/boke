@@ -227,7 +227,7 @@ router.delete('/:id/posts/:postId', authMiddleware, async (req, res) => {
     }
 
     await runSql('DELETE FROM column_posts WHERE "columnId" = $1 AND "postId" = $2', [req.params.id, req.params.postId]);
-    await runSql('UPDATE columns SET "postCount" = "postCount" - 1 WHERE id = $1', [req.params.id]);
+    await runSql('UPDATE columns SET "postCount" = GREATEST(0, "postCount" - 1) WHERE id = $1', [req.params.id]);
     await runSql('UPDATE posts SET "columnId" = NULL WHERE id = $1', [req.params.postId]);
 
     res.json({ data: { message: '移除成功' } });

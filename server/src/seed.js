@@ -561,7 +561,7 @@ export default async function seed() {
   await runSql("SELECT setval('post_favorites_id_seq', (SELECT MAX(id) FROM post_favorites))");
 
   console.log('✓ Database seeded successfully');
-  console.log(`  - 1 user (admin@moke.com / password123)`);
+  console.log(`  - 1 user (admin@moke.com)`);
   console.log(`  - ${CATEGORIES.length} categories`);
   console.log(`  - ${POSTS.length} posts`);
   const totalComments = POSTS.reduce((sum, p) => sum + (p.comments?.length || 0), 0);

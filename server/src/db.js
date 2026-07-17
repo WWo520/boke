@@ -7,6 +7,14 @@ const pool = new Pool({
   database: process.env.POSTGRES_DATABASE || 'moke_blog',
   user: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'postgres',
+  // 连接池参数：限制最大连接、回收空闲连接、获取连接超时，避免高负载下连接耗尽
+  max: parseInt(process.env.POSTGRES_POOL_MAX) || 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
+
+pool.on('error', (err) => {
+  console.error('Unexpected PG pool error:', err.message);
 });
 
 export async function initDb() {
@@ -319,4 +327,10 @@ export async function insertSql(sql, params = []) {
 
 export async function closeDb() {
   await pool.end();
+}
+
+// 健康检查：验证数据库连接可用
+export async function healthCheck() {
+  await pool.query('SELECT 1');
+  return true;
 }

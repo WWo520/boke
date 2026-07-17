@@ -399,18 +399,19 @@
   color: var(--color-text-primary);
 }
 
-/* Content Editor */
+/* Content Editor (inside editorColumn) */
 .contentEditor {
+  flex: 1;
   width: 100%;
-  min-height: 400px;
+  min-height: 420px;
   padding: 16px 20px;
-  font-size: 15px;
+  font-size: 14.5px;
   line-height: 1.7;
   color: var(--color-text-primary);
   background: var(--color-bg);
   border: none;
   outline: none;
-  resize: vertical;
+  resize: none;
   font-family: var(--font-mono);
   box-sizing: border-box;
 }
@@ -427,9 +428,171 @@
   font-size: 12px;
   color: var(--color-text-muted);
   border-top: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  flex-shrink: 0;
 }
 
-/* Preview */
+/* vditor WYSIWYG 编辑器容器 */
+.vditorWrap {
+  padding: 12px 16px 16px;
+}
+
+.vditorWrap :global(.vditor) {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+[data-theme="dark"] .vditorWrap :global(.vditor) {
+  border-color: var(--color-border);
+}
+
+/* Preview markdown body (rendered output) */
+.previewBody {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--color-text-primary);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.previewBody h1,
+.previewBody h2,
+.previewBody h3,
+.previewBody h4,
+.previewBody h5,
+.previewBody h6 {
+  color: var(--color-text-primary);
+  font-weight: var(--font-semibold);
+  line-height: 1.3;
+  margin: 1.2em 0 0.6em;
+}
+
+.previewBody h1 { font-size: 1.65em; border-bottom: 1px solid var(--color-border-light); padding-bottom: 6px; }
+.previewBody h2 { font-size: 1.4em;  border-bottom: 1px solid var(--color-border-light); padding-bottom: 4px; }
+.previewBody h3 { font-size: 1.2em; }
+.previewBody h4 { font-size: 1.05em; }
+
+.previewBody p {
+  margin: 0 0 1em;
+}
+
+.previewBody ul,
+.previewBody ol {
+  margin: 0 0 1em;
+  padding-left: 1.6em;
+}
+
+.previewBody li {
+  margin-bottom: 0.3em;
+}
+
+.previewBody blockquote {
+  margin: 1em 0;
+  padding: 0.6em 1em;
+  border-left: 4px solid var(--color-primary);
+  background: var(--color-primary-lighter);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.previewBody pre {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin: 1em 0;
+  font-size: 0.88em;
+  line-height: 1.7;
+  color: #e2e8f0;
+}
+
+.previewBody code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.previewBody pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  border-radius: 0;
+}
+
+.previewBody :not(pre) > code {
+  background: var(--color-primary-lighter);
+  color: var(--color-primary-dark);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.88em;
+}
+
+[data-theme="dark"] .previewBody :not(pre) > code {
+  background: rgba(96, 165, 250, 0.15);
+  color: #93c5fd;
+}
+
+.previewBody table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.92em;
+  display: block;
+  overflow-x: auto;
+}
+
+.previewBody th,
+.previewBody td {
+  border: 1px solid var(--color-border);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.previewBody th {
+  background: var(--color-bg-secondary);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.previewBody td {
+  color: var(--color-text-secondary);
+}
+
+.previewBody a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.previewBody a:hover {
+  color: var(--color-primary-dark);
+}
+
+.previewBody strong {
+  color: var(--color-text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.previewBody hr {
+  border: none;
+  border-top: 1px solid var(--color-border-light);
+  margin: 1.5em 0;
+}
+
+.previewBody img {
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+  margin: 0.8em auto;
+  display: block;
+}
+
+.previewBody input[type="checkbox"] {
+  margin-right: 6px;
+}
+
+/* Legacy preview (used when preview mode is active for whole-page preview) */
 .preview {
   padding: 0;
 }
@@ -502,50 +665,6 @@
   font-size: 16px;
   line-height: 1.8;
   color: var(--color-text-primary);
-}
-
-.previewBody :deep(pre) {
-  padding: 16px;
-  background: var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-  overflow-x: auto;
-}
-
-.previewBody :deep(code) {
-  padding: 2px 6px;
-  background: var(--color-bg-tertiary);
-  border-radius: 4px;
-  font-family: var(--font-mono);
-}
-
-.previewBody :deep(pre code) {
-  padding: 0;
-  background: transparent;
-}
-
-.previewBody :deep(blockquote) {
-  border-left: 4px solid var(--color-primary);
-  padding-left: 16px;
-  color: var(--color-text-secondary);
-  margin: 16px 0;
-}
-
-.previewBody :deep(table) {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 16px 0;
-}
-
-.previewBody :deep(th),
-.previewBody :deep(td) {
-  border: 1px solid var(--color-border);
-  padding: 8px 12px;
-  text-align: left;
-}
-
-.previewBody :deep(th) {
-  background: var(--color-bg-secondary);
-  font-weight: 600;
 }
 
 .previewPlaceholder {
@@ -697,6 +816,10 @@
 
   .previewTitle {
     font-size: 22px;
+  }
+
+  .vditorWrap {
+    padding: 8px 10px 12px;
   }
 
   .actionsBar {
