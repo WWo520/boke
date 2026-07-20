@@ -549,7 +549,7 @@ async function start() {
   await initDb();
 
   const countRow = await queryOne('SELECT COUNT(*) as count FROM posts');
-  const count = countRow.count;
+  const count = parseInt(countRow.count) || 0;
   if (count === 0) {
     console.log('📦 Empty database detected, seeding...');
     await seed();

@@ -1,0 +1,25 @@
+# ---- Express 后端生产镜像 ----
+# build context 是 ./server（见 docker-compose.deploy.yml），所以本文件路径相对 server/
+FROM node:20-alpine
+WORKDIR /app
+
+# 先装生产依赖（利用 Docker 层缓存）
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev --no-audit --no-fund
+
+# 拷贝业务代码（server/src 等）
+COPY . .
+
+# 预创建上传目录（挂载点，运行时由 volume 覆盖）
+RUN mkdir -p /app/uploads
+
+ENV NODE_ENV=production \
+    PORT=3333 \
+    HOST=0.0.0.0
+
+EXPOSE 3333
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -qO- http://localhost:3333/readyz || exit 1
+
+CMD ["node", "src/index.js"]

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Mail, Github, Twitter, Linkedin, Heart, BookOpen } from 'lucide-react';
+import { Mail, Github, Twitter, Linkedin, Heart, Activity } from 'lucide-react';
 import { categoriesApi } from '../../api/client';
 import styles from './Footer.module.css';
 
@@ -20,11 +20,11 @@ export default function Footer() {
           {/* Brand */}
           <div className={styles.brand}>
             <Link href="/" className={styles.logo}>
-              <BookOpen size={22} />
-              <span>墨客博客</span>
+              <Activity size={22} />
+              <span>PulseBeat</span>
             </Link>
             <p className={styles.description}>
-              探索技术、设计与生活的精彩内容。用心写作，分享有价值的知识。
+              Feel the thoughts. 记录技术、设计与生活的每一次脉动。
             </p>
             <div className={styles.socialLinks}>
               <a href="https://github.com" target="_blank" rel="noopener noreferrer" className={styles.socialLink} aria-label="GitHub">
@@ -36,7 +36,7 @@ export default function Footer() {
               <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className={styles.socialLink} aria-label="LinkedIn">
                 <Linkedin size={18} />
               </a>
-              <a href="mailto:hello@moke-blog.com" className={styles.socialLink} aria-label="发送邮件">
+              <a href="mailto:702639128@qq.com" className={styles.socialLink} aria-label="发送邮件">
                 <Mail size={18} />
               </a>
             </div>
@@ -73,7 +73,7 @@ export default function Footer() {
             <ul className={styles.contactList}>
               <li className={styles.contactItem}>
                 <Mail size={16} />
-                <span>hello@moke-blog.com</span>
+                <span>702639128@qq.com</span>
               </li>
               <li className={styles.contactItem}>
                 <Heart size={16} />
@@ -87,10 +87,10 @@ export default function Footer() {
 
         <div className={styles.bottom}>
           <p className={styles.copyright}>
-            &copy; {currentYear} 墨客博客. All rights reserved.
+            &copy; {currentYear} PulseBeat. All rights reserved.
           </p>
           <p className={styles.tagline}>
-            Built with <Heart size={14} className={styles.heartIcon} /> by 墨客
+            Built with <Heart size={14} className={styles.heartIcon} /> by PulseBeat
           </p>
         </div>
       </div>

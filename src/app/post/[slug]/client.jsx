@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, Eye, Clock, ArrowLeft, User, Tag, ChevronRight, Heart, Bookmark } from 'lucide-react';
 import { postsApi, commentsApi, likesApi, favoritesApi } from '../../../api/client';
+import { useAuthGate } from '@/hooks/useAuthGate';
 import { formatDate, formatViews, estimateReadingTime } from '../../../utils/helpers';
 import ShareButtons from '../../../components/ShareButtons/ShareButtons';
 import CommentSection from '../../../components/CommentSection/CommentSection';
@@ -30,6 +31,7 @@ function getCategoryColor(slug) {
 export default function PostDetailClient({ initialPost, slug: propSlug }) {
   const paramsSlug = useParams();
   const slug = propSlug || paramsSlug?.slug;
+  const { go, requireAuth } = useAuthGate();
   const [post, setPost] = useState(initialPost || null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(!initialPost);
@@ -80,7 +82,7 @@ export default function PostDetailClient({ initialPost, slug: propSlug }) {
   }, [user, slug]);
 
   const handleLike = () => {
-    if (!user) return;
+    if (!requireAuth()) return;
     likesApi.toggle(slug).then((res) => {
       setLiked(res.data.liked);
       setLikeCount(res.data.count);
@@ -88,7 +90,7 @@ export default function PostDetailClient({ initialPost, slug: propSlug }) {
   };
 
   const handleFavorite = () => {
-    if (!user) return;
+    if (!requireAuth()) return;
     favoritesApi.toggle(slug).then((res) => {
       setFavorited(res.data.favorited);
       setFavoriteCount(res.data.count);
@@ -156,13 +158,13 @@ export default function PostDetailClient({ initialPost, slug: propSlug }) {
 
             <div className={styles.meta}>
               <div className={styles.authorInfo}>
-                <Link href={`/u/${post.author.name}`}>
+                <span onClick={() => go(`/u/${post.author.name}`)} style={{ cursor: 'pointer' }}>
                   <img src={post.author.avatar} alt={post.author.name} className={styles.authorAvatar} />
-                </Link>
+                </span>
                 <div className={styles.authorInfoText}>
-                  <Link href={`/u/${post.author.name}`} className={styles.authorName}>
+                  <span onClick={() => go(`/u/${post.author.name}`)} className={styles.authorName} style={{ cursor: 'pointer' }}>
                     {post.author.name}
-                  </Link>
+                  </span>
                   <div className={styles.metaDetails}>
                     <span className={styles.metaItem}>
                       <Calendar size={14} />

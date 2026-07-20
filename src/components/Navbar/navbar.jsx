@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, User, BookOpen, LogOut, PenLine, Shield, HelpCircle } from 'lucide-react';
+import { Search, User, Activity, LogOut, PenLine, Shield, HelpCircle } from 'lucide-react';
 import { useToast } from '../Toast/Toast';
 import AuthModal from '../AuthModal/AuthModal';
 import ThemeToggle from '../ThemeToggle/ThemeToggle';
@@ -119,8 +119,8 @@ export default function Navbar() {
       >
         <div className={styles.container}>
           <Link href="/" className={styles.logo} aria-label="回到首页">
-            <BookOpen size={24} className={styles.logoIcon} />
-            <span className={styles.logoText}>墨客博客</span>
+            <Activity size={24} className={styles.logoIcon} />
+            <span className={styles.logoText}>PulseBeat</span>
           </Link>
 
           <div className={styles.desktopNav}>
@@ -163,10 +163,10 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <button className={styles.authButton} onClick={() => setAuthOpen(true)} aria-label="登录">
+              <Link href="/login" className={styles.authButton} aria-label="登录">
                 <User size={18} />
                 <span>登录</span>
-              </button>
+              </Link>
             )}
           </div>
 
@@ -208,9 +208,9 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <button className={styles.mobileIconBtn} onClick={() => setAuthOpen(true)} aria-label="登录">
+              <Link href="/login" className={styles.mobileIconBtn} aria-label="登录">
                 <User size={18} />
-              </button>
+              </Link>
             )}
           </div>
         </div>
@@ -227,10 +227,10 @@ export default function Navbar() {
               </button>
             </div>
           ) : (
-            <button className={styles.mobileAuthButton} onClick={() => { setMenuOpen(false); setAuthOpen(true); }}>
+            <Link href="/login" className={styles.mobileAuthButton} onClick={() => setMenuOpen(false)}>
               <User size={18} />
               <span>登录 / 注册</span>
-            </button>
+            </Link>
           )}
         </div>
       </div>

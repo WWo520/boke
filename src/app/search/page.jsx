@@ -2,6 +2,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { searchApi } from '../../api/client';
+import { useAuthGate } from '@/hooks/useAuthGate';
 import BlogCard from '../../components/BlogCard/BlogCard';
 import Pagination from '../../components/Pagination/Pagination';
 import styles from '@/css_pages/search.module.css';
@@ -10,6 +11,7 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const router = useRouter();
+  const { go } = useAuthGate();
   const [searchQuery, setSearchQuery] = useState(query || '');
   const [results, setResults] = useState({ posts: [], users: [], tags: [] });
   const [activeTab, setActiveTab] = useState('posts');
@@ -122,7 +124,7 @@ function SearchContent() {
           results.users.length > 0 ? (
             <div className={styles.userList}>
               {results.users.map(user => (
-                <div key={user.id} className={styles.userCard} onClick={() => router.push(`/u/${user.name}`)}>
+                <div key={user.id} className={styles.userCard} onClick={() => go(`/u/${user.name}`)}>
                   <img src={user.avatar} alt={user.name} className={styles.userAvatar} />
                   <div className={styles.userInfo}>
                     <div className={styles.userName}>

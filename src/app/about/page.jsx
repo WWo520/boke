@@ -153,7 +153,7 @@ export default function About() {
             <div className={styles.contactList}>
               <div className={styles.contactItem}>
                 <Mail size={16} />
-                <span>admin@moke.com</span>
+                <span>702639128@qq.com</span>
               </div>
               <div className={styles.contactItem}>
                 <MapPin size={16} />

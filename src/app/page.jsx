@@ -1,9 +1,12 @@
 import HomeClient from './home-client';
 
+// 首页数据实时渲染：每次访问都重新拉取，不使用构建时缓存
+export const dynamic = 'force-dynamic';
+
 async function fetchAPI(path) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
   try {
-    const res = await fetch(`${baseUrl}${path}`, { next: { revalidate: 30 } });
+    const res = await fetch(`${baseUrl}${path}`, { next: { revalidate: 0 } });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -12,12 +15,12 @@ async function fetchAPI(path) {
 }
 
 export default async function HomePage() {
-  const [postsData, categoriesData, hotPostsData, tagsData, authorData] = await Promise.all([
+  const [postsData, categoriesData, hotPostsData, tagsData, authorsData] = await Promise.all([
     fetchAPI('/api/posts?page=1&pageSize=15'),
     fetchAPI('/api/categories'),
     fetchAPI('/api/ranking/posts?limit=10&period=all'),
     fetchAPI('/api/tags'),
-    fetchAPI('/api/author'),
+    fetchAPI('/api/ranking/authors?limit=50'),
   ]);
 
   const posts = postsData?.data || [];
@@ -26,7 +29,7 @@ export default async function HomePage() {
   const hotPosts = hotPostsData?.data || [];
   const tags = tagsData?.data || [];
   const totalPosts = postsData?.pagination?.total || 0;
-  const totalUsers = authorData?.data?.stats?.posts != null ? 1 : 0; // single-author blog
+  const totalUsers = authorsData?.data?.length || 0; // 真实作者数
 
   return (
     <HomeClient
@@ -36,6 +39,7 @@ export default async function HomePage() {
       initialHotPosts={hotPosts}
       initialTags={tags}
       totalPosts={totalPosts}
+      totalUsers={totalUsers}
     />
   );
 }

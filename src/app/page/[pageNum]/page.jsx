@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Calendar, Eye, MessageCircle, Tag as TagIcon, Flame, TrendingUp, ArrowUp, ArrowDown, BookOpen, PenLine, Users, ArrowRight } from 'lucide-react';
 import Pagination from '../../../components/Pagination/Pagination';
 import { postsApi, categoriesApi, rankingApi, tagsApi, usersApi } from '../../../api/client';
+import { useAuthGate } from '@/hooks/useAuthGate';
 import styles from '@/css_pages/home.module.css';
 
 const PER_PAGE = 15;
@@ -38,6 +39,7 @@ function formatDate(dateStr) {
 export default function Home() {
   const { pageNum } = useParams();
   const router = useRouter();
+  const { go } = useAuthGate();
   const currentPage = parseInt(pageNum, 10) || 1;
 
   const [posts, setPosts] = useState([]);
@@ -241,9 +243,9 @@ export default function Home() {
                       </Link>
                       <p className={styles.postSummary}>{post.summary}</p>
                       <div className={styles.postMeta}>
-                        <Link href={`/u/${post.author?.name}`} className={styles.authorLink}>
+                        <span onClick={() => go(`/u/${post.author?.name}`)} className={styles.authorLink} style={{ cursor: 'pointer' }}>
                           {post.author?.name}
-                        </Link>
+                        </span>
                         <span className={styles.metaDot}>·</span>
                         <span><Calendar size={12} /> {formatDate(post.publishedAt)}</span>
                         <span className={styles.metaDot}>·</span>

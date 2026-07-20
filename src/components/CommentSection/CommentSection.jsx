@@ -1,7 +1,9 @@
+'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { MessageCircle, Send, User, Heart, Reply } from 'lucide-react';
 import { commentsApi } from '../../api/client';
 import { formatDate } from '../../utils/helpers';
+import { useAuthGate } from '@/hooks/useAuthGate';
 import styles from './CommentSection.module.css';
 
 function NestedComment({ comment, onLike, likedComments, user }) {
@@ -106,6 +108,7 @@ function CommentSection({ slug, comments: initialComments }) {
   const [optimisticId, setOptimisticId] = useState(null);
   const [likedComments, setLikedComments] = useState(new Set());
   const [user, setUser] = useState(null);
+  const { requireAuth } = useAuthGate();
 
   useEffect(() => {
     try {
@@ -129,6 +132,7 @@ function CommentSection({ slug, comments: initialComments }) {
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
+      if (!requireAuth()) return;
       if (!validate()) return;
 
       setSubmitting(true);
@@ -164,7 +168,7 @@ function CommentSection({ slug, comments: initialComments }) {
         setContent('');
       }
     },
-    [slug, content, validate, name, user],
+    [slug, content, validate, name, user, requireAuth],
   );
 
   const handleNameChange = useCallback((e) => {
@@ -178,10 +182,7 @@ function CommentSection({ slug, comments: initialComments }) {
   }, []);
 
   const handleLike = useCallback(async (commentId) => {
-    if (!user) {
-      setErrors({ name: '', content: '请先登录后再点赞' });
-      return;
-    }
+    if (!requireAuth()) return;
 
     if (likedComments.has(commentId)) return;
 
@@ -206,7 +207,7 @@ function CommentSection({ slug, comments: initialComments }) {
         ),
       );
     }
-  }, [user, likedComments]);
+  }, [requireAuth, likedComments]);
 
   const list = commentList.length > 0 ? commentList : initialComments;
 
@@ -220,26 +221,24 @@ function CommentSection({ slug, comments: initialComments }) {
         )}
       </h3>
 
+      {!user ? (
+        <div className={styles.form} style={{ textAlign: 'center', padding: '36px 20px' }}>
+          <p style={{ color: 'var(--color-text-secondary, #64748b)', marginBottom: 16, fontSize: 14 }}>
+            登录后即可发表评论
+          </p>
+          <button
+            type="button"
+            className={styles.submitButton}
+            onClick={() => requireAuth()}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <User size={16} />
+            立即登录
+          </button>
+        </div>
+      ) : (
       <form className={styles.form} onSubmit={handleSubmit}>
         <p className={styles.formTitle}>发表评论</p>
-
-        {!user && (
-          <div className={styles.fieldGroup}>
-            <label className={styles.label} htmlFor="comment-name">
-              昵称
-            </label>
-            <input
-              id="comment-name"
-              className={`${styles.input}${errors.name ? ` ${styles.inputError}` : ''}`}
-              type="text"
-              placeholder="你的昵称"
-              value={name}
-              onChange={handleNameChange}
-              maxLength={30}
-            />
-            {errors.name && <p className={styles.errorText}>{errors.name}</p>}
-          </div>
-        )}
 
         <div className={styles.fieldGroup}>
           <label className={styles.label} htmlFor="comment-content">
@@ -267,6 +266,7 @@ function CommentSection({ slug, comments: initialComments }) {
           </button>
         </div>
       </form>
+      )}
 
       {list.length === 0 && (
         <div className={styles.empty}>

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, Eye, MessageCircle, Tag as TagIcon, Flame, TrendingUp, BookOpen, PenLine, Users, ArrowRight } from 'lucide-react';
 import { categoriesApi, rankingApi, tagsApi, postsApi } from '../api/client';
+import { useAuthGate } from '@/hooks/useAuthGate';
 import styles from '@/css_pages/home.module.css';
 
 const PER_PAGE = 15;
@@ -36,8 +37,9 @@ const getRankIcon = (index) => {
   return <span className={styles.rankNum}>{index + 1}</span>;
 };
 
-export default function HomeClient({ initialPosts, initialTotalPages, initialCategories, initialHotPosts, initialTags, totalPosts }) {
+export default function HomeClient({ initialPosts, initialTotalPages, initialCategories, initialHotPosts, initialTags, totalPosts, totalUsers }) {
   const router = useRouter();
+  const { go } = useAuthGate();
   const [posts, setPosts] = useState(initialPosts);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [postsLoading, setPostsLoading] = useState(false);
@@ -45,7 +47,7 @@ export default function HomeClient({ initialPosts, initialTotalPages, initialCat
   const [hotPosts, setHotPosts] = useState(initialHotPosts);
   const [popularTags, setPopularTags] = useState(initialTags.slice(0, 15));
   const [selectedCat, setSelectedCat] = useState('');
-  const [totalStats, setTotalStats] = useState({ posts: totalPosts, users: 1 });
+  const [totalStats, setTotalStats] = useState({ posts: totalPosts, users: totalUsers });
 
   const currentPage = 1;
 
@@ -72,9 +74,9 @@ export default function HomeClient({ initialPosts, initialTotalPages, initialCat
         <div className={styles.heroContainer}>
           <div className={styles.heroContent}>
             <h1 className={styles.heroTitle}>
-              探索<span className={styles.heroHighlight}>技术</span>与<span className={styles.heroHighlight}>生活</span>
+              Feel the <span className={styles.heroHighlight}>thoughts</span>.
             </h1>
-            <p className={styles.heroDesc}>分享技术、设计与生活的精彩内容。用心写作，传递有价值的知识。</p>
+            <p className={styles.heroDesc}>记录技术、设计与生活的每一次脉动。</p>
             <div className={styles.heroStatsRow}>
               <div className={styles.heroStat}>
                 <BookOpen size={18} />
@@ -174,7 +176,7 @@ export default function HomeClient({ initialPosts, initialTotalPages, initialCat
                       <Link href={`/post/${post.slug}`}><h3 className={styles.postTitle}>{post.title}</h3></Link>
                       <p className={styles.postSummary}>{post.summary}</p>
                       <div className={styles.postMeta}>
-                        <Link href={`/u/${post.author?.name}`} className={styles.authorLink}>{post.author?.name}</Link>
+                        <span onClick={() => go(`/u/${post.author?.name}`)} className={styles.authorLink} style={{ cursor: 'pointer' }}>{post.author?.name}</span>
                         <span className={styles.metaDot}>·</span>
                         <span><Calendar size={12} /> {formatDate(post.publishedAt)}</span>
                         <span className={styles.metaDot}>·</span>

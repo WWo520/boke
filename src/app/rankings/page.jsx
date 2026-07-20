@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { rankingApi } from '../../api/client';
+import { useAuthGate } from '@/hooks/useAuthGate';
 import FollowButton from '../../components/FollowButton/FollowButton';
 import styles from '../../css_pages/Rankings.module.css';
 
 export default function Rankings() {
   const { type } = useParams();
   const router = useRouter();
+  const { go } = useAuthGate();
   const [activeType, setActiveType] = useState(type || 'hot');
   const [period, setPeriod] = useState('week');
   const [data, setData] = useState([]);
@@ -115,7 +117,7 @@ export default function Rankings() {
           <div className={styles.empty}>暂无数据</div>
         ) : activeType === 'authors' ? (
           data.map((author, index) => (
-            <div key={author.id} className={styles.item} onClick={() => router.push(`/u/${author.name}`)}>
+            <div key={author.id} className={styles.item} onClick={() => go(`/u/${author.name}`)}>
               <span className={getRankStyle(index)}>{index + 1}</span>
               <img src={author.avatar} alt={author.name} className={styles.authorAvatar} />
               <div className={styles.authorInfo}>
