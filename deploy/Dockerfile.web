@@ -11,6 +11,7 @@ COPY . .
 
 # 生产构建：生成 .next/standalone 等产物
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS="--max-old-space-size=1024"
 RUN npm run build
 
 # 生产运行时（精简镜像）
